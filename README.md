@@ -7,6 +7,28 @@ C版本的ExBuffer：https://github.com/play175/exbuffer.c
 ```javascript
 var ExBuffer = require('./ExBuffer');
 
+/*********************** TLV包结构 示列 ********************************/
+exBuffer = new ExBuffer().int8Tag().uint32Head().bigEndian()
+exBuffer.on('data', onReceivePackData)
+
+socket.on('data', function (data) {
+  exBuffer.put(data)
+})
+
+function onReceivePackData(data) {
+  var tag = data.tag
+  var value = data.value ? data.value.toString() : null
+  debuger('[Received] tag: ' + tag + ' value: ' + value)
+
+  if (value){
+    value = JSON.parse(value)
+  }
+
+  if (typeof receiveCallback === "function"){
+    receiveCallback(tag, value)
+  }
+}
+
 /*************************基本操作****************************/
 
 //构造一个ExBuffer，采用4个字节（uint32无符号整型）表示包长，而且是little endian 字节序
