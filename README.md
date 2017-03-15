@@ -4,6 +4,11 @@ ExBuffer，NodeJs的TCP中的粘包、分包问题的解决方案！
 
 C版本的ExBuffer：https://github.com/play175/exbuffer.c
 
+参考Node端对TCP Socket的封装库（TLV格式）：[node-socket](https://github.com/xiaoping6688/node-socket)
+```
+npm install --save node-socket
+```
+
 ```javascript
 var ExBuffer = require('./ExBuffer');
 
@@ -26,6 +31,42 @@ function onReceivePackData(data) {
 
   if (typeof receiveCallback === "function"){
     receiveCallback(tag, value)
+  }
+}
+
+/**
+ * Send data to server
+ * @param cmd means tag
+ * @parma arg means value
+ */
+function send(cmd, arg){
+  debuger('[Send] tag: ' + cmd + ' value: ' + (arg ? JSON.stringify(arg) : ''))
+  if (client){
+    var data = null, len = 0
+    if (arg){
+      data = JSON.stringify(arg)
+      len = Buffer.byteLength(data)
+    }
+
+    // TLV pack:
+    // Write the tag: use one byte
+    var tagBuf = Buffer.alloc(1)
+    tagBuf.writeInt8(cmd, 0)
+    client.write(tagBuf)
+
+    // Write the length of value: use four bytes
+    var headBuf = Buffer.alloc(4)
+    headBuf.writeUInt32BE(len, 0)
+    client.write(headBuf)
+
+    // Then, write the value
+    if (len > 0){
+      var bodyBuf = Buffer.alloc(len)
+      bodyBuf.write(data)
+      client.write(bodyBuf)
+    }
+  } else {
+    debuger("The socket has not connected yet.")
   }
 }
 
